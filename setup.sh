@@ -1,5 +1,36 @@
 #!/bin/bash
 
+initialize() {
+    echo "===== Initializing Setup ====="
+    echo "Checking server specifications..."
+
+    # Menampilkan spesifikasi server
+    cpu_info=$(lscpu | grep 'Model name' | awk -F: '{print $2}' | xargs)
+    ram_info=$(free -h | grep Mem | awk '{print $2}')
+    storage_info=$(df -h / | grep / | awk '{print $2}')
+
+    echo "Processor: $cpu_info"
+    echo "RAM: $ram_info"
+    echo "Storage: $storage_info"
+
+    echo "Checking internet connection..."
+    if ! ping -c 1 8.8.8.8 &> /dev/null; then
+        echo "[FAILED] No internet connection. Please check your network."
+        exit 1
+    fi
+
+    echo "[DONE] Internet connection is active."
+
+    # Prompt untuk melanjutkan instalasi
+    read -p "Do you want to proceed with the installation? (y/n): " proceed
+    if [[ "$proceed" != "y" && "$proceed" != "Y" ]]; then
+        echo "Installation aborted."
+        exit 0
+    fi
+
+    echo "Initialization complete. Proceeding with installation..."
+}
+
 loading() {
     spin='|/-\'
     percentage=0
@@ -47,32 +78,8 @@ run_with_loading() {
     echo -e "\r$message [$total_percentage%] [DONE in ${elapsed_time}s, estimated ${estimated_time}s]"
 }
 
-# Menampilkan spesifikasi server
-cpu_info=$(lscpu | grep 'Model name' | awk -F: '{print $2}' | xargs)
-ram_info=$(free -h | grep Mem | awk '{print $2}')
-storage_info=$(df -h / | grep / | awk '{print $2}')
-
-clear
-
-echo "===== Server Specifications ====="
-echo "Processor: $cpu_info"
-echo "RAM: $ram_info"
-echo "Storage: $storage_info"
-
-echo "Checking internet connection..."
-if ! ping -c 1 8.8.8.8 &> /dev/null; then
-    echo "[FAILED] No internet connection. Please check your network."
-    exit 1
-fi
-
-echo "[DONE] Internet connection is active."
-
-# Prompt untuk melanjutkan instalasi
-read -p "Do you want to proceed with the installation? (y/n): " proceed
-if [[ "$proceed" != "y" && "$proceed" != "Y" ]]; then
-    echo "Installation aborted."
-    exit 0
-fi
+# Menjalankan proses initialize
+initialize
 
 # Prompt untuk konfigurasi PostgreSQL
 read -p "Enter PostgreSQL username (default: postgres): " postgres_user
