@@ -137,7 +137,7 @@ fi
 # Prompt untuk instalasi eRapor SMK
 read -p "Do you want to install eRapor SMK? (y/n): " install_erapor
 if [[ "$install_erapor" == "y" || "$install_erapor" == "Y" ]]; then
-    run_with_loading "sudo apt install git -y && git clone https://github.com/eraporsmk/erapor7.git /var/www/eraporsmk" "Cloning eRapor SMK repository..." 10 30
+    run_with_loading "sudo apt install git -y && sudo git clone https://github.com/eraporsmk/erapor7.git /var/www/eraporsmk" "Cloning eRapor SMK repository..." 10 30
     run_with_loading "sudo chown -R www-data:www-data /var/www/eraporsmk && sudo chmod -R 755 /var/www/eraporsmk" "Setting permissions for eRapor SMK..." 5 5
     if [ -f /var/www/eraporsmk/.env.example ]; then
         run_with_loading "cp /var/www/eraporsmk/.env.example /var/www/eraporsmk/.env" "Copying .env.example to .env..." 5 5
