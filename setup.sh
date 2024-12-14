@@ -21,11 +21,13 @@ run_with_loading() {
     command=$1
     message=$2
     step_percentage=$3
+    estimated_time=$4
     total_percentage=0
 
     loading "$message" &
     pid=$!
 
+    start_time=$(date +%s)
     eval "$command"
     if [ $? -ne 0 ]; then
         kill $pid
@@ -35,13 +37,17 @@ run_with_loading() {
         exit 1
     fi
 
+    end_time=$(date +%s)
+    elapsed_time=$((end_time - start_time))
+
     total_percentage=$((total_percentage + step_percentage))
 
     kill $pid
     wait $pid 2>/dev/null
-    echo -e "\r$message [$total_percentage%] [DONE]"
+    echo -e "\r$message [$total_percentage%] [DONE in ${elapsed_time}s, estimated ${estimated_time}s]"
 }
 
+# Menampilkan spesifikasi server
 cpu_info=$(lscpu | grep 'Model name' | awk -F: '{print $2}' | xargs)
 ram_info=$(free -h | grep Mem | awk '{print $2}')
 storage_info=$(df -h / | grep / | awk '{print $2}')
@@ -53,44 +59,68 @@ echo "Processor: $cpu_info"
 echo "RAM: $ram_info"
 echo "Storage: $storage_info"
 
-echo "\nChecking internet connection..."
+echo "Checking internet connection..."
 if ! ping -c 1 8.8.8.8 &> /dev/null; then
     echo "[FAILED] No internet connection. Please check your network."
     exit 1
 fi
 
-echo "[DONE] Internet connection is active.\n"
+echo "[DONE] Internet connection is active."
 
+# Prompt untuk melanjutkan instalasi
 read -p "Do you want to proceed with the installation? (y/n): " proceed
 if [[ "$proceed" != "y" && "$proceed" != "Y" ]]; then
     echo "Installation aborted."
     exit 0
 fi
 
-run_with_loading "sudo apt update && sudo apt upgrade -y" "Updating and upgrading system..." 10
+# Prompt untuk konfigurasi PostgreSQL
+read -p "Enter PostgreSQL username (default: postgres): " postgres_user
+postgres_user=${postgres_user:-postgres}
 
-run_with_loading "sudo apt install apache2 -y" "Installing Apache2..." 10
+read -p "Enter PostgreSQL password: " -s postgres_password
+echo
 
-run_with_loading "sudo apt install software-properties-common -y" "Preparing PHP repository..." 10
-run_with_loading "sudo add-apt-repository ppa:ondrej/php -y && sudo apt update" "Adding PHP repository..." 10
-run_with_loading "sudo apt install php8.1 php8.1-ctype php8.1-curl php8.1-dom php8.1-fileinfo php8.1-filter php8.1-hash php8.1-mbstring php8.1-openssl php8.1-pcre php8.1-pdo php8.1-session php8.1-tokenizer php8.1-xml -y" "Installing PHP 8.1 and extensions..." 20
+read -p "Enter PostgreSQL database name: " postgres_db
+postgres_db=${postgres_db:-my_database}
 
-run_with_loading "sudo apt install curl unzip -y" "Installing prerequisites for Composer..." 5
-run_with_loading "curl -sS https://getcomposer.org/installer | php" "Downloading Composer..." 5
-run_with_loading "sudo mv composer.phar /usr/local/bin/composer" "Finalizing Composer installation..." 5
+# Update dan upgrade sistem
+run_with_loading "sudo apt update && sudo apt upgrade -y" "Updating and upgrading system..." 10 120
 
-run_with_loading "sudo apt install postgresql postgresql-contrib -y" "Installing PostgreSQL..." 10
+# Install Apache2
+run_with_loading "sudo apt install apache2 -y" "Installing Apache2..." 10 30
 
-run_with_loading "sudo a2enmod php8.1" "Enabling PHP module for Apache..." 5
-run_with_loading "sudo systemctl restart apache2" "Restarting Apache..." 5
+# Install PHP 8.1 dan ekstensi-ekstensi yang diperlukan
+run_with_loading "sudo apt install software-properties-common -y" "Preparing PHP repository..." 10 20
+run_with_loading "sudo add-apt-repository ppa:ondrej/php -y && sudo apt update" "Adding PHP repository..." 10 40
+run_with_loading "sudo apt install php8.1 php8.1-ctype php8.1-curl php8.1-dom php8.1-fileinfo php8.1-mbstring php8.1-pdo php8.1-tokenizer php8.1-xml -y" "Installing PHP 8.1 and extensions..." 20 60
 
-echo -e "\nInstallation complete! Checking installed versions:\n"
+# Install Composer
+run_with_loading "sudo apt install curl unzip -y" "Installing prerequisites for Composer..." 5 15
+run_with_loading "curl -sS https://getcomposer.org/installer | php" "Downloading Composer..." 5 10
+run_with_loading "sudo mv composer.phar /usr/local/bin/composer" "Finalizing Composer installation..." 5 5
+
+# Install PostgreSQL
+run_with_loading "sudo apt install postgresql postgresql-contrib -y" "Installing PostgreSQL..." 10 30
+
+# Konfigurasi PostgreSQL
+run_with_loading "sudo systemctl start postgresql && sudo systemctl enable postgresql" "Starting and enabling PostgreSQL service..." 5 5
+run_with_loading "sudo -u postgres psql -c \"ALTER USER $postgres_user PASSWORD '$postgres_password';\"" "Setting PostgreSQL password..." 5 5
+run_with_loading "sudo -u postgres createdb $postgres_db" "Creating PostgreSQL database '$postgres_db'..." 5 5
+
+# Konfigurasi Apache untuk PHP
+run_with_loading "sudo a2enmod php8.1" "Enabling PHP module for Apache..." 5 5
+run_with_loading "sudo systemctl restart apache2" "Restarting Apache..." 5 10
+
+# Menampilkan versi yang terinstall
+echo -e "Installation complete! Checking installed versions:"
 
 apache2 -v
 php -v
 composer --version
 psql --version
 
+# Menampilkan log instalasi jika diminta
 echo -e "\nAll installation logs are displayed above."
 read -p "Do you want to view detailed logs in real-time? (y/n): " view_log
 if [[ "$view_log" == "y" || "$view_log" == "Y" ]]; then
