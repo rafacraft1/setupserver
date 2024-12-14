@@ -93,7 +93,7 @@ run_with_loading "sudo apt install apache2 -y" "Installing Apache2..." 10 30
 # Install PHP 8.1 dan ekstensi-ekstensi yang diperlukan
 run_with_loading "sudo apt install software-properties-common -y" "Preparing PHP repository..." 10 20
 run_with_loading "sudo add-apt-repository ppa:ondrej/php -y && sudo apt update" "Adding PHP repository..." 10 40
-run_with_loading "sudo apt install php8.1 php8.1-ctype php8.1-curl php8.1-dom php8.1-fileinfo php8.1-filter php8.1-hash php8.1-mbstring php8.1-openssl php8.1-pcre php8.1-pdo php8.1-session php8.1-tokenizer php8.1-xml -y" "Installing PHP 8.1 and extensions..." 20 60
+run_with_loading "sudo apt install php8.1 php8.1-ctype php8.1-curl php8.1-dom php8.1-fileinfo php8.1-mbstring php8.1-pdo php8.1-tokenizer php8.1-xml -y" "Installing PHP 8.1 and extensions..." 20 60
 
 # Install Composer
 run_with_loading "sudo apt install curl unzip -y" "Installing prerequisites for Composer..." 5 15
