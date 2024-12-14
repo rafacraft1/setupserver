@@ -140,8 +140,8 @@ if [[ "$install_erapor" == "y" || "$install_erapor" == "Y" ]]; then
     run_with_loading "sudo apt install git -y && sudo git clone https://github.com/eraporsmk/erapor7.git /var/www/eraporsmk" "Cloning eRapor SMK repository..." 10 30
     run_with_loading "sudo chown -R www-data:www-data /var/www/eraporsmk && sudo chmod -R 755 /var/www/eraporsmk" "Setting permissions for eRapor SMK..." 5 5
     if [ -f /var/www/eraporsmk/.env.example ]; then
-        run_with_loading "cp /var/www/eraporsmk/.env.example /var/www/eraporsmk/.env" "Copying .env.example to .env..." 5 5
-        run_with_loading "sed -i \"s/DB_HOST=.*/DB_HOST=127.0.0.1/;s/DB_PORT=.*/DB_PORT=5432/;s/DB_DATABASE=.*/DB_DATABASE=$postgres_db/;s/DB_USERNAME=.*/DB_USERNAME=$postgres_user/;s/DB_PASSWORD=.*/DB_PASSWORD=$postgres_password/\" /var/www/eraporsmk/.env" "Configuring database credentials in .env..." 5 5
+        run_with_loading "sudo cp /var/www/eraporsmk/.env.example /var/www/eraporsmk/.env" "Copying .env.example to .env..." 5 5
+        run_with_loading "sudo sed -i \"s/DB_HOST=.*/DB_HOST=127.0.0.1/;s/DB_PORT=.*/DB_PORT=5432/;s/DB_DATABASE=.*/DB_DATABASE=$postgres_db/;s/DB_USERNAME=.*/DB_USERNAME=$postgres_user/;s/DB_PASSWORD=.*/DB_PASSWORD=$postgres_password/\" /var/www/eraporsmk/.env" "Configuring database credentials in .env..." 5 5
     else
         echo "Error: .env.example file not found in /var/www/eraporsmk."
         exit 1
