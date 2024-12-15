@@ -73,9 +73,29 @@ configure_postgres() {
     read -p "PostgreSQL database name (default: my_database): " postgres_db
     postgres_db=${postgres_db:-my_database}
 
+    # Check if database already exists
+    db_exists=$(sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='$postgres_db'")
+
+    if [ "$db_exists" == "1" ]; then
+        log "Database $postgres_db already exists."
+        read -p "Use existing database? (y/n): " use_existing
+        if [ "$use_existing" == "y" ]; then
+            log "Using existing database $postgres_db."
+        else
+            read -p "Enter a new database name: " postgres_db
+            db_exists=$(sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='$postgres_db'")
+            if [ "$db_exists" == "1" ]; then
+                log "Error: Database $postgres_db also exists. Please choose a different name."
+                exit 1
+            fi
+        fi
+    fi
+
+    # Create user and database
     run_with_spinner "sudo -u postgres psql -c \"CREATE USER $postgres_user WITH PASSWORD '$postgres_password';\"" "Creating PostgreSQL user"
     run_with_spinner "sudo -u postgres psql -c \"CREATE DATABASE $postgres_db OWNER $postgres_user;\"" "Creating PostgreSQL database"
 }
+
 
 install_erapor() {
     run_with_spinner "sudo apt install git -y && sudo git clone https://github.com/eraporsmk/erapor7.git /var/www/eraporsmk" "Cloning eRapor SMK repository"
