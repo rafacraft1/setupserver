@@ -9,10 +9,9 @@ log() {
 
 spinner() {
     spin='|/-\\'
-    while :; do
-        for i in {0..3}; do
-            echo -ne "\r$1 ${spin:$i:1}"; sleep 0.2
-        done
+    for i in {0..3}; do
+        echo -ne "\r$1 ${spin:$i:1}"
+        sleep 0.2
     done
 }
 
