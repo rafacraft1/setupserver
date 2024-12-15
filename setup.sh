@@ -127,27 +127,37 @@ php -v
 composer --version
 psql --version
 
-# Menampilkan log instalasi jika diminta
-echo -e "\nAll installation logs are displayed above."
-read -p "Do you want to view detailed logs in real-time? (y/n): " view_log
-if [[ "$view_log" == "y" || "$view_log" == "Y" ]]; then
-    echo "No log file saved as output is directly shown."
-fi
-
 # Prompt untuk instalasi eRapor SMK
 read -p "Do you want to install eRapor SMK? (y/n): " install_erapor
 if [[ "$install_erapor" == "y" || "$install_erapor" == "Y" ]]; then
     run_with_loading "sudo apt install git -y && sudo git clone https://github.com/eraporsmk/erapor7.git /var/www/eraporsmk" "Cloning eRapor SMK repository..." 10 30
     run_with_loading "sudo chown -R www-data:www-data /var/www/eraporsmk && sudo chmod -R 755 /var/www/eraporsmk" "Setting permissions for eRapor SMK..." 5 5
     if [ -f /var/www/eraporsmk/.env.example ]; then
-        run_with_loading "sudo cp /var/www/eraporsmk/.env.example /var/www/eraporsmk/.env" "Copying .env.example to .env..." 5 5
-        run_with_loading "sudo sed -i \"s/DB_HOST=.*/DB_HOST=127.0.0.1/;s/DB_PORT=.*/DB_PORT=5432/;s/DB_DATABASE=.*/DB_DATABASE=$postgres_db/;s/DB_USERNAME=.*/DB_USERNAME=$postgres_user/;s/DB_PASSWORD=.*/DB_PASSWORD=$postgres_password/\" /var/www/eraporsmk/.env" "Configuring database credentials in .env..." 5 5
+        run_with_loading "cp /var/www/eraporsmk/.env.example /var/www/eraporsmk/.env" "Copying .env.example to .env..." 5 5
+        run_with_loading "sed -i \"s/DB_HOST=.*/DB_HOST=127.0.0.1/;s/DB_PORT=.*/DB_PORT=5432/;s/DB_DATABASE=.*/DB_DATABASE=$postgres_db/;s/DB_USERNAME=.*/DB_USERNAME=$postgres_user/;s/DB_PASSWORD=.*/DB_PASSWORD=$postgres_password/\" /var/www/eraporsmk/.env" "Configuring database credentials in .env..." 5 5
     else
         echo "Error: .env.example file not found in /var/www/eraporsmk."
         exit 1
     fi
-    run_with_loading "sudo systemctl restart apache2" "Restarting Apache after eRapor SMK setup..." 5 10
-    echo "eRapor SMK has been successfully installed!"
+
+    # Konfigurasi VirtualHost untuk eRapor SMK
+    read -p "Enter ServerName for VirtualHost (e.g., eraporsmk.local): " server_name
+    read -p "Enter ServerAdmin email (e.g., admin@example.com): " server_admin
+
+    run_with_loading "echo '<VirtualHost *:80>
+    ServerAdmin $server_admin
+    DocumentRoot /var/www/eraporsmk/public
+    ServerName $server_name
+    <Directory /var/www/eraporsmk/public>
+        AllowOverride All
+        Require all granted
+    </Directory>
+    ErrorLog \\\${APACHE_LOG_DIR}/eraporsmk_error.log
+    CustomLog \\\${APACHE_LOG_DIR}/eraporsmk_access.log combined
+</VirtualHost>' | sudo tee /etc/apache2/sites-available/eraporsmk.conf" "Creating VirtualHost configuration..." 5 5
+    run_with_loading "sudo a2ensite eraporsmk.conf" "Enabling eRapor SMK VirtualHost..." 5 5
+    run_with_loading "sudo systemctl restart apache2" "Restarting Apache with VirtualHost configuration..." 5 10
+    echo "VirtualHost for eRapor SMK has been successfully configured!"
 else
     echo "Skipping eRapor SMK installation."
 fi
