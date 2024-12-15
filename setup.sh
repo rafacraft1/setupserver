@@ -20,8 +20,9 @@ run_with_spinner() {
     message=$2
     spinner "$message" &
     pid=$!
-    eval "$command"
-    if [ $? -ne 0 ]; then
+    eval "$command" &>/dev/null
+    result=$?
+    if [ $result -ne 0 ]; then
         kill $pid; wait $pid 2>/dev/null
         log "$message [FAILED]"
         exit 1
