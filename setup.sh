@@ -178,10 +178,7 @@ run_with_spinner "sudo systemctl start postgresql && sudo systemctl enable postg
 configure_postgres
 run_with_spinner "sudo a2enmod php8.1 && sudo systemctl restart apache2" "Configuring Apache for PHP"
 
-read -p "Install eRapor SMK? (y/n): " install_erapor
-[[ "$install_erapor" == "y" ]] && install_erapor
-
-read -p "Set default Apache site to /var/www/eraporsmk/public? (y/n): " set_default
-[[ "$set_default" == "y" ]] && set_default_site
+install_erapor
+set_default_site
 
 log "Installation complete!"
