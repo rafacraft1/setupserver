@@ -165,7 +165,7 @@ set_default_site() {
 }
 
 initialize
-run_with_spinner "sudo apt update && sudo apt upgrade -y" "Updating system"
+run_with_spinner "sudo apt update -y" "Updating system"
 check_and_install apache2 "Installing Apache2"
 check_and_install "software-properties-common" "Preparing PHP repository"
 run_with_spinner "sudo add-apt-repository ppa:ondrej/php -y && sudo apt update" "Adding PHP repository"
